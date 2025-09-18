@@ -1,6 +1,13 @@
 import streamlit as st
 import pandas as pd
-import chromadb
+try:
+    import pysqlite3
+    import sys
+    sys.modules["sqlite3"] = pysqlite3
+except ImportError:
+    pass
+
+import chromadb  # ← Ahora Chroma usará el módulo correcto
 from sentence_transformers import SentenceTransformer
 import logging
 import re

@@ -1,13 +1,18 @@
+# --- Librerías principales ---
 streamlit==1.28.1
 pandas==2.1.3
 openpyxl==3.1.2
 chromadb==0.4.18
 sentence-transformers==2.2.2
-torch==2.0.1  # Versión CPU-only estable
+torch==2.0.1
 transformers==4.35.0
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.25.1
 openai==1.3.7
 numpy==1.24.3
-hnswlib==0.7.4
-accelerate==0.21.0  # Ayuda con transformers
+
+# --- Compatibilidad con hnswlib mínima funcional ---
+hnswlib==0.7.0  # ¡OJO! 0.7.4 NO existe para Python 3.11, usa 0.7.0
+
+# --- Extras útiles ---
+tqdm==4.66.1

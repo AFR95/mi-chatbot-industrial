@@ -1,0 +1,49 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Archivos de Streamlit
+.streamlit/
+
+# Base de datos Chroma (local)
+chroma_db/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de logs
+*.log
+
+# Excel local (no subir al repo)
+HISTORICO_INCIDENCIAS.xlsx
+dataset_limpio_*.xlsx
+
+# Variables de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/

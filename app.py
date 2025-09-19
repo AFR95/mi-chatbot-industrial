@@ -635,7 +635,7 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
             with col3:
                 st.info(f"🔍 **Consulta**: {clean_query}")
             
-            query_emb = st.session_state.model.encode([clean_query])
+            query_emb = st.session_state.model.encode([clean_query]).tolist()
             where_clause = {}
             
             if equipo or planta:

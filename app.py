@@ -662,9 +662,9 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
     st.markdown("### 📋 Respuesta del Sistema:")
     st.markdown(respuesta)
     
-    # Resultados crudos
+    # ✅ CORREGIDO: Mover este bloque DENTRO del if
     with st.expander("🔍 Ver detalles técnicos (resultados de búsqueda)", expanded=False):
-        if results['documents'][0]:
+        if 'results' in locals() and results['documents'][0]:
             results_df = pd.DataFrame({
                 'Error': results['documents'][0],
                 'Solución': [m['solución'] for m in results['metadatas'][0]],
@@ -698,7 +698,6 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
                 st.metric("✅ Alta relevancia", len(results_df[results_df['Distancia'] < 0.5]))
             with col3:
                 st.metric("🔄 Media relevancia", len(results_df[(results_df['Distancia'] >= 0.5) & (results_df['Distancia'] < 0.75)]))
-                
         else:
             st.warning("⚠️ No se encontraron incidencias relevantes para esta consulta.")
             st.info("💡 **Sugerencias**:\n- Prueba términos más específicos\n- Incluye el equipo\n- Especifica la planta")

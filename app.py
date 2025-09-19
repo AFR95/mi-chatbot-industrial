@@ -12,10 +12,11 @@ from sentence_transformers import SentenceTransformer
 import logging
 import re
 from fuzzywuzzy import process
-from openai import OpenAI
+#from openai #import OpenAI
 import os
 import tempfile
 from datetime import datetime
+import httpx  
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,12 +29,12 @@ if not api_key:
     st.error("❌ **Error de configuración**: No se encontró la variable de entorno `XAI_API_KEY`.")
     st.info("**Solución**: Ejecuta en terminal: `export XAI_API_KEY=tu_api_key_aqui`")
     st.stop()
-
+'''
 client = OpenAI(
     api_key=api_key,
     base_url="https://api.x.ai/v1"
 )
-
+'''
 # === Diccionarios globales ===
 diccionario_equipos = {
     'aljibe': 'aljibe',
@@ -343,12 +344,12 @@ def generar_respuesta_elaborada(query, planta, equipo, results):
     if not resultados_str:
         resultados_str = "No se encontraron incidencias relevantes."
 
-    prompt = f"""
-Eres un asistente técnico especializado en mantenimiento industrial. He ejecutado una consulta sobre incidencias en una planta industrial, y obtuve los siguientes resultados de una base de datos de incidencias:
+    prompt = f""" Eres un asistente técnico especializado en mantenimiento industrial. He ejecutado una consulta sobre 
+    incidencias en una planta industrial, y obtuve los siguientes resultados de una base de datos de incidencias:
 
-**Consulta**: "{query}"
-**Planta**: "{planta}"
-**Equipo**: "{equipo}"
+**Consulta**: '{query}'
+**Planta**: '{planta}'
+**Equipo**: '{equipo}'
 **Resultados**:
 {resultados_str}
 

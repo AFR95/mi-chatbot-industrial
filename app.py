@@ -47,7 +47,7 @@ def llamar_grok(prompt):
     }
     
     data = {
-        "model": "grok-beta",   # Modelo estable de xAI
+        "model": "grok-4",   # Modelo estable de xAI
         "messages": [
             {
                 "role": "system", 

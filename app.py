@@ -37,7 +37,7 @@ else:
 
 # === FUNCIÓN: Llamada directa a Grok API con httpx ===
 def llamar_grok(prompt):
-    """Llama directamente a la API de xAI usando httpx"""
+    """Llama directamente a la API de xAI (Grok) usando httpx"""
     if not HAS_XAI:
         return None
     
@@ -47,7 +47,7 @@ def llamar_grok(prompt):
     }
     
     data = {
-        "model": "grok-1",  # Modelo estable de xAI
+        "model": "grok-beta",   # Modelo estable de xAI
         "messages": [
             {
                 "role": "system", 
@@ -69,21 +69,25 @@ def llamar_grok(prompt):
                 headers=headers,
                 json=data
             )
-            response.raise_for_status()  # Lanza excepción si status != 200
+            response.raise_for_status()  # Error si no es 200
         
         result = response.json()
         return result["choices"][0]["message"]["content"].strip()
-        
+    
     except httpx.TimeoutException:
-        logging.error("Timeout al llamar a xAI API")
+        logging.error("⏱️ Timeout al llamar a xAI API")
+        st.error("❌ Timeout: la API de xAI no respondió a tiempo.")
         return None
     except httpx.HTTPStatusError as e:
-        logging.error(f"Error HTTP {e.response.status_code} al llamar a xAI: {e.response.text}")
+        logging.error(f"⚠️ Error HTTP {e.response.status_code}: {e.response.text}")
+        st.error(f"❌ Error HTTP {e.response.status_code} en la API de xAI")
+        st.code(e.response.text, language="json")
         return None
     except Exception as e:
-        logging.error(f"Error inesperado en xAI API: {e}")
+        logging.error(f"🔥 Error inesperado en xAI API: {e}")
+        st.error(f"❌ Error inesperado al conectar con la API de xAI: {e}")
         return None
-
+        
 # === Diccionarios globales ===
 diccionario_equipos = {
     'aljibe': 'aljibe',
@@ -533,6 +537,18 @@ st.markdown("---")
 
 # Sidebar para configuración y actualizaciones
 with st.sidebar:
+    # === TEST de conexión con xAI ===
+    st.header("🔑 Testear conexión con xAI")
+    if HAS_XAI and st.button("Probar conexión con Grok"):
+        st.info("⏳ Probando conexión con xAI...")
+        test_prompt = "Dime en una frase qué hace un PLC en una planta industrial."
+        respuesta_test = llamar_grok(test_prompt)
+        if respuesta_test:
+            st.success("✅ Conexión correcta con xAI")
+            st.write("**Respuesta de prueba:**")
+            st.markdown(f"> {respuesta_test}")
+        else:
+            st.error("❌ No se pudo conectar con xAI. Revisa tu API Key o logs.")
     st.header("⚙️ Configuración")
     
     # Estado de xAI

@@ -21,7 +21,8 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Configurar API de xAI - VERIFICACIÓN DE VARIABLE DE ENTORNO
-api_key = os.getenv('XAI_API_KEY')
+#api_key = os.getenv('XAI_API_KEY')
+api_key = st.secrets["XAI_API_KEY"]
 
 if not api_key:
     st.error("❌ **Error de configuración**: No se encontró la variable de entorno `XAI_API_KEY`.")

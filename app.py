@@ -1,31 +1,93 @@
 import streamlit as st
 import pandas as pd
+try:
+    import pysqlite3
+    import sys
+    sys.modules["sqlite3"] = pysqlite3
+except ImportError:
+    pass
+
 import chromadb
 from sentence_transformers import SentenceTransformer
 import logging
 import re
 from fuzzywuzzy import process
-from openai import OpenAI
+import openai  # Import completo para v0.28.1
 import os
 import tempfile
 from datetime import datetime
+import httpx
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Configurar API de xAI - VERIFICACIÓN DE VARIABLE DE ENTORNO
-api_key = os.getenv('XAI_API_KEY')
+# === Carga API KEY con st.secrets ===
+api_key = st.secrets.get("XAI_API_KEY")
 
 if not api_key:
-    st.error("❌ **Error de configuración**: No se encontró la variable de entorno `XAI_API_KEY`.")
-    st.info("**Solución**: Ejecuta en terminal: `export XAI_API_KEY=tu_api_key_aqui`")
-    st.stop()
+    st.error("❌ **Error de configuración**: No se encontró la clave `XAI_API_KEY` en secrets.")
+    st.warning("⚠️ La app funcionará en modo **fallback** (sin IA generativa).")
+    st.info("**Solución**: Ve a Streamlit Cloud → Manage app → Settings → Secrets → Add: `XAI_API_KEY`")
+    # No usar st.stop() - permitir que la app continúe
+    HAS_XAI = False
+else:
+    HAS_XAI = True
+    st.success("✅ API de xAI configurada correctamente.")
+    openai.api_key = api_key
 
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://api.x.ai/v1"
-)
-
+# === FUNCIÓN: Llamada directa a Grok API con httpx ===
+def llamar_grok(prompt):
+    """Llama directamente a la API de xAI (Grok) usando httpx"""
+    if not HAS_XAI:
+        return None
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    data = {
+        "model": "grok-3",   # Modelo estable de xAI
+        "messages": [
+            {
+                "role": "system", 
+                "content": "Eres un asistente técnico especializado en mantenimiento industrial. Responde de forma clara y profesional."
+            },
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ],
+        "max_tokens": 250,
+        "temperature": 0.7
+    }
+    
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                "https://api.x.ai/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
+            response.raise_for_status()  # Error si no es 200
+        
+        result = response.json()
+        return result["choices"][0]["message"]["content"].strip()
+    
+    except httpx.TimeoutException:
+        logging.error("⏱️ Timeout al llamar a xAI API")
+        st.error("❌ Timeout: la API de xAI no respondió a tiempo.")
+        return None
+    except httpx.HTTPStatusError as e:
+        logging.error(f"⚠️ Error HTTP {e.response.status_code}: {e.response.text}")
+        st.error(f"❌ Error HTTP {e.response.status_code} en la API de xAI")
+        st.code(e.response.text, language="json")
+        return None
+    except Exception as e:
+        logging.error(f"🔥 Error inesperado en xAI API: {e}")
+        st.error(f"❌ Error inesperado al conectar con la API de xAI: {e}")
+        return None
+        
 # === Diccionarios globales ===
 diccionario_equipos = {
     'aljibe': 'aljibe',
@@ -325,7 +387,7 @@ def parse_query(query):
     equipo = diccionario_equipos.get(equipo, equipo)
     return planta, equipo, clean_query
 
-# === Generar respuesta elaborada con xAI API ===
+# === Generar respuesta elaborada con xAI API (httpx) ===
 def generar_respuesta_elaborada(query, planta, equipo, results):
     resultados_str = "\n".join([
         f"- Error: {doc}, Solución: {meta['solución']}, Planta: {meta['planta']}, "
@@ -335,12 +397,11 @@ def generar_respuesta_elaborada(query, planta, equipo, results):
     if not resultados_str:
         resultados_str = "No se encontraron incidencias relevantes."
 
-    prompt = f"""
-Eres un asistente técnico especializado en mantenimiento industrial. He ejecutado una consulta sobre incidencias en una planta industrial, y obtuve los siguientes resultados de una base de datos de incidencias:
+    prompt = f"""Eres un asistente técnico especializado en mantenimiento industrial. He ejecutado una consulta sobre incidencias en una planta industrial, y obtuve los siguientes resultados de una base de datos de incidencias:
 
-**Consulta**: "{query}"
-**Planta**: "{planta}"
-**Equipo**: "{equipo}"
+**Consulta**: '{query}'
+**Planta**: '{planta}'
+**Equipo**: '{equipo}'
 **Resultados**:
 {resultados_str}
 
@@ -367,20 +428,19 @@ Eres un asistente técnico especializado en mantenimiento industrial. He ejecuta
 - [Si no hay resultados, indicar que no se encontraron incidencias y sugerir pasos genéricos]
 """
 
-    try:
-        response = client.chat.completions.create(
-            model="grok-3",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=250,
-            temperature=0.7
-        )
-        respuesta = response.choices[0].message.content.strip()
-        return respuesta
-    except Exception as e:
-        logging.error(f"Error en xAI API: {e}")
-        # Fallback mejorado
-        if not results['documents'][0]:
-            return f"""
+    # Intentar con xAI
+    if HAS_XAI:
+        respuesta_xai = llamar_grok(prompt)
+        if respuesta_xai:
+            st.info("🤖 Respuesta generada por xAI (Grok)")
+            return respuesta_xai
+
+    # Fallback si xAI falla o no está disponible
+    logging.warning("Usando fallback - xAI no disponible")
+    st.warning("⚠️ Modo fallback: Respuesta basada en histórico (sin IA generativa)")
+    
+    if not results['documents'][0]:
+        return f"""
 **Problema**: No se encontraron incidencias relevantes para el equipo '{equipo}' en la planta '{planta}' con el problema descrito ('{query}').
 
 **Pasos para Resolver**:
@@ -392,39 +452,40 @@ Eres un asistente técnico especializado en mantenimiento industrial. He ejecuta
 **Notas**:
 - Se recomienda intervención de ingeniería.
 - Verifica si el equipo está configurado correctamente en SCADA.
+- xAI no disponible - respuesta automática.
 """
-        else:
+    else:
+        relevant_results = [
+            (doc, meta['solución'], dist)
+            for doc, meta, dist in zip(results['documents'][0], results['metadatas'][0], results['distances'][0])
+            if dist < 0.75
+        ]
+        if not relevant_results:
             relevant_results = [
                 (doc, meta['solución'], dist)
                 for doc, meta, dist in zip(results['documents'][0], results['metadatas'][0], results['distances'][0])
-                if dist < 0.75
-            ]
-            if not relevant_results:
-                relevant_results = [
-                    (doc, meta['solución'], dist)
-                    for doc, meta, dist in zip(results['documents'][0], results['metadatas'][0], results['distances'][0])
-                ][:3]
-            
-            # Agrupar por tipo de solución
-            pasos = []
-            tipos = {'reinicio': False, 'configuracion': False, 'hardware': False}
-            
-            for doc, solucion, dist in relevant_results:
-                if 'reinicia' in solucion.lower() and not tipos['reinicio']:
-                    pasos.append("1. Reinicia el servidor SCADA (IP: 172.16.6.240 o 172.16.1.240) y conéctate por web. Si no responde, reinicia el servidor físico o la máquina virtual WinCC2k16 en el host ESXi.")
-                    tipos['reinicio'] = True
-                elif 'configuracion' in solucion.lower() or 'red' in solucion.lower() and not tipos['configuracion']:
-                    pasos.append("2. Verifica la configuración de red y variadores. Revisa cables, switches, y logs del sistema para identificar fallos de comunicación.")
-                    tipos['configuracion'] = True
-                elif 'motor' in solucion.lower() or 'hardware' in solucion.lower() and not tipos['hardware']:
-                    pasos.append("3. Inspecciona componentes de hardware (motores, fusibles, PLC). Sustituye elementos defectuosos si es necesario.")
-                    tipos['hardware'] = True
-                elif len(pasos) < 3:
-                    pasos.append(f"3. {solucion}")
-            
-            pasos_str = "\n".join(pasos[:3]) if pasos else "No hay soluciones específicas disponibles."
-            problema = f"El equipo '{equipo}' en la planta '{planta}' presenta un problema de {query.lower()}."
-            respuesta = f"""
+            ][:3]
+        
+        # Agrupar por tipo de solución
+        pasos = []
+        tipos = {'reinicio': False, 'configuracion': False, 'hardware': False}
+        
+        for doc, solucion, dist in relevant_results:
+            if 'reinicia' in solucion.lower() and not tipos['reinicio']:
+                pasos.append("1. Reinicia el servidor SCADA (IP: 172.16.6.240 o 172.16.1.240) y conéctate por web. Si no responde, reinicia el servidor físico o la máquina virtual WinCC2k16 en el host ESXi.")
+                tipos['reinicio'] = True
+            elif 'configuracion' in solucion.lower() or 'red' in solucion.lower() and not tipos['configuracion']:
+                pasos.append("2. Verifica la configuración de red y variadores. Revisa cables, switches, y logs del sistema para identificar fallos de comunicación.")
+                tipos['configuracion'] = True
+            elif 'motor' in solucion.lower() or 'hardware' in solucion.lower() and not tipos['hardware']:
+                pasos.append("3. Inspecciona componentes de hardware (motores, fusibles, PLC). Sustituye elementos defectuosos si es necesario.")
+                tipos['hardware'] = True
+            elif len(pasos) < 3:
+                pasos.append(f"3. {solucion}")
+        
+        pasos_str = "\n".join(pasos[:3]) if pasos else "No hay soluciones específicas disponibles."
+        problema = f"El equipo '{equipo}' en la planta '{planta}' presenta un problema de {query.lower()}."
+        respuesta = f"""
 **Problema**: {problema}
 
 **Pasos para Resolver**:
@@ -433,9 +494,9 @@ Eres un asistente técnico especializado en mantenimiento industrial. He ejecuta
 **Notas**:
 - Todas las soluciones requieren intervención de ingeniería.
 - Verifica la conectividad de red, switches, y logs del sistema si el problema persiste.
-- Si el problema continúa, contacta al equipo de ingeniería para soporte avanzado.
+- xAI no disponible - respuesta basada en histórico.
 """
-            return respuesta
+        return respuesta
 
 # === NUEVA FUNCIÓN PARA ACTUALIZAR BASE DE DATOS ===
 def actualizar_base_datos(uploaded_file):
@@ -476,10 +537,26 @@ st.markdown("---")
 
 # Sidebar para configuración y actualizaciones
 with st.sidebar:
+    # === TEST de conexión con xAI ===
+    st.header("🔑 Testear conexión con xAI")
+    if HAS_XAI and st.button("Probar conexión con Grok"):
+        st.info("⏳ Probando conexión con xAI...")
+        test_prompt = "Dime en una frase qué hace un PLC en una planta industrial."
+        respuesta_test = llamar_grok(test_prompt)
+        if respuesta_test:
+            st.success("✅ Conexión correcta con xAI")
+            st.write("**Respuesta de prueba:**")
+            st.markdown(f"> {respuesta_test}")
+        else:
+            st.error("❌ No se pudo conectar con xAI. Revisa tu API Key o logs.")
     st.header("⚙️ Configuración")
     
-    # Verificar API Key
-    st.success("✅ API Key configurada correctamente")
+    # Estado de xAI
+    if HAS_XAI:
+        st.success("🤖 xAI (Grok) **ACTIVA**")
+    else:
+        st.warning("⚠️ xAI **DESACTIVADA** - Modo fallback")
+        st.info("Configura `XAI_API_KEY` en Secrets para activar IA generativa")
     
     # Upload de nuevos archivos
     st.header("📁 Actualizar Base de Datos")
@@ -524,7 +601,7 @@ if 'collection' not in st.session_state:
             archivo_entrada = "HISTORICO_INCIDENCIAS.xlsx"
             if not os.path.exists(archivo_entrada):
                 st.error(f"❌ Archivo `{archivo_entrada}` no encontrado.")
-                st.info("**Solución**: Coloca el archivo en el directorio raíz o sube uno nuevo.")
+                st.info("**Solución**: Sube el archivo Excel al repositorio GitHub.")
                 st.stop()
             
             df = cargar_datos(archivo_entrada)
@@ -574,7 +651,7 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
             with col3:
                 st.info(f"🔍 **Consulta**: {clean_query}")
             
-            query_emb = st.session_state.model.encode([clean_query])
+            query_emb = st.session_state.model.encode([clean_query]).tolist()
             where_clause = {}
             
             if equipo or planta:
@@ -601,38 +678,34 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
     st.markdown("### 📋 Respuesta del Sistema:")
     st.markdown(respuesta)
     
-    # CORREGIDO: Resultados crudos con manejo robusto de tipos
+    # ✅ CORREGIDO: Mover este bloque DENTRO del if
     with st.expander("🔍 Ver detalles técnicos (resultados de búsqueda)", expanded=False):
-        if results['documents'][0]:
-            # Crear DataFrame con tipos correctos
+        if 'results' in locals() and results['documents'][0]:
             results_df = pd.DataFrame({
                 'Error': results['documents'][0],
                 'Solución': [m['solución'] for m in results['metadatas'][0]],
                 'Planta': [m['planta'] for m in results['metadatas'][0]],
                 'Equipo': [m['equipo'] for m in results['metadatas'][0]],
-                'Distancia': results['distances'][0],  # Ya son floats
+                'Distancia': results['distances'][0],
                 'Relevancia': ['Alta' if d < 0.5 else 'Media' if d < 0.75 else 'Baja' for d in results['distances'][0]]
             })
             
-            # Función highlight_relevant corregida
             def highlight_relevant(row):
                 try:
                     distancia = float(row['Distancia'])
                     if distancia < 0.5:
-                        return ['background-color: #d4edda'] * len(row)  # Verde claro
+                        return ['background-color: #d4edda'] * len(row)
                     elif distancia < 0.75:
-                        return ['background-color: #fff3cd'] * len(row)  # Amarillo claro
+                        return ['background-color: #fff3cd'] * len(row)
                     else:
-                        return ['background-color: #f8d7da'] * len(row)  # Rojo claro
+                        return ['background-color: #f8d7da'] * len(row)
                 except (ValueError, TypeError):
-                    # Si no se puede convertir, no aplicar color
                     return [''] * len(row)
             
-            # Aplicar el estilo
             styled_df = results_df.style.apply(highlight_relevant, axis=1)
             st.dataframe(styled_df)
             
-            # Estadísticas adicionales
+            # Estadísticas
             st.markdown("---")
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -641,17 +714,9 @@ if st.button("🔍 Consultar", type="primary") and query.strip():
                 st.metric("✅ Alta relevancia", len(results_df[results_df['Distancia'] < 0.5]))
             with col3:
                 st.metric("🔄 Media relevancia", len(results_df[(results_df['Distancia'] >= 0.5) & (results_df['Distancia'] < 0.75)]))
-                
         else:
             st.warning("⚠️ No se encontraron incidencias relevantes para esta consulta.")
-            
-            # Sugerencias de búsqueda
-            st.info("💡 **Sugerencias**:")
-            st.markdown("""
-            - Prueba con términos más específicos: "scada no responde", "servidor no arranca"
-            - Incluye el equipo: "robot 5 no funciona", "etiquetadora error"
-            - Especifica la planta: "lácteos caldera fallo", "piensos dematic"
-            """)
+            st.info("💡 **Sugerencias**:\n- Prueba términos más específicos\n- Incluye el equipo\n- Especifica la planta")
 
 # Footer
 st.markdown("---")

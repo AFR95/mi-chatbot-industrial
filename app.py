@@ -601,7 +601,7 @@ if 'collection' not in st.session_state:
             archivo_entrada = "HISTORICO_INCIDENCIAS.xlsx"
             if not os.path.exists(archivo_entrada):
                 st.error(f"❌ Archivo `{archivo_entrada}` no encontrado.")
-                st.info("**Solución**: Sube el archivo Excel al repositorio GitHub.")
+                st.info("**Solución**: Coloca el archivo en el directorio raíz o sube uno nuevo.")
                 st.stop()
             
             df = cargar_datos(archivo_entrada)
@@ -627,7 +627,6 @@ else:
         st.metric("⚙️ Equipos", len(st.session_state.df_actual['equipo'].unique()))
     
     st.caption(f"🕒 Última actualización: {st.session_state.ultima_actualizacion}")
-
 st.markdown("---")
 
 # Input de consulta

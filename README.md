@@ -93,3 +93,38 @@ Ver `requirements.txt`
 │ • 9 plantas     │
 │ • 88 equipos    │
 └─────────────────┘
+
+
+# 🤖 Chatbot Industrial para Resolución de Incidencias
+
+**Proyecto Final de Máster en IA y Ciencia de Datos** | Entrega: Septiembre 2025
+
+## 📊 Problema Bien Definido
+**Problema Real**: En plantas industriales, las incidencias técnicas (e.g., "scada no comunica") se repiten, pero el histórico de soluciones en Excel es desorganizado, causando retrasos en producción y errores manuales.
+
+**Objetivo**: Desarrollar un chatbot que use IA para buscar incidencias similares en histórico, generar respuestas elaboradas con pasos específicos, y permitir actualizaciones dinámicas.
+
+**Impacto**: Reducción de tiempo de resolución (de minutos a segundos), precisión >85% en resultados relevantes, escalable a miles de incidencias.
+
+**Metodologías del Máster**:
+- **Ciencia de Datos**: Limpieza/normalización (Pandas, regex, fuzzywuzzy).
+- **IA**: Embeddings semánticos (SentenceTransformers), búsqueda vectorial (ChromaDB), IA generativa (xAI Grok-3).
+- **Automatización**: Upload y reindexación dinámica (Streamlit).
+- **Visualización**: UI interactiva con métricas y tablas (Streamlit).
+
+## 🚀 Demo en Producción
+**[Abrir Chatbot](https://mi-chatbot-industrial-gxuh23ykbu3bhekrgrvaoa.streamlit.app)** (Streamlit Cloud, 24/7)
+
+**Ejemplo de Uso**:
+1. Consulta: "scada cogeneracion no comunica"
+2. Parsing: Planta: cogeneración | Equipo: scada
+3. Respuesta Grok-3: Pasos detallados (e.g., "Reinicia servidor IP 172.16.6.240")
+4. Detalles: Tabla coloreada con resultados similares (relevancia alta/media/baja)
+
+## 🛠️ Arquitectura
+
+┌──────────────┐   ┌───────────────┐   ┌──────────────┐
+│ Usuario      │   │ Backend       │   │ Datos/IA     │
+│ Streamlit UI │◄──►│ Parsing fuzzy │◄──►│ ChromaDB     │
+│ Consultas    │   │ Búsqueda emb. │   │ xAI Grok-3   │
+└──────────────┘   └───────────────┘   └──────────────┘

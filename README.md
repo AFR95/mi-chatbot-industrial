@@ -1,12 +1,3 @@
-## 📊 Características
-
-- 🔍 **Búsqueda semántica** con embeddings multilingual
-- 🏭 **Mapeo inteligente** de equipos y plantas
-- 🤖 **Respuestas generadas** por xAI (Grok)
-- 📁 **Upload dinámico** de nuevos datos
-- 🎨 **Interfaz profesional** con métricas
-
-
 # 🤖 Chatbot Industrial para Resolución de Incidencias
 
 **Proyecto Final de Máster en IA y Ciencia de Datos** | Entrega: Septiembre 2025
@@ -24,6 +15,14 @@
 - **Automatización**: Upload y reindexación dinámica (Streamlit).
 - **Visualización**: UI interactiva con métricas y tablas (Streamlit).
 
+## 📊 Características
+
+- 🔍 **Búsqueda semántica** con embeddings multilingual
+- 🏭 **Mapeo inteligente** de equipos y plantas
+- 🤖 **Respuestas generadas** por xAI (Grok)
+- 📁 **Upload dinámico** de nuevos datos
+- 🎨 **Interfaz profesional** con métricas
+
 ## 🚀 Demo en Producción
 **[Abrir Chatbot](https://mi-chatbot-industrial-gxuh23ykbu3bhekrgrvaoa.streamlit.app)** (Streamlit Cloud, 24/7)
 
@@ -35,20 +34,11 @@
 
 
 ## 🛠️ Arquitectura Técnica
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend        │    │   xAI API       │
-│ Streamlit UI    │◄──►│ Flask/Python     │◄──►│   Grok-3        │
-│ • Parsing       │    │ • ChromaDB       │    │ • Respuestas    │
-│ • Métricas      │    │ • Embeddings     │    │   elaboradas    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │
-         ▼
-┌──────────────────┐
-│   Datos          │
-│ • 554 incidencias│
-│ • 9 plantas      │
-│ • 88 equipos     │
-└──────────────────┘
+┌──────────────┐   ┌───────────────┐   ┌──────────────┐
+│ Usuario      │   │ Backend       │   │ Datos/IA     │
+│ Streamlit UI │◄──►│ Parsing fuzzy │◄──►│ ChromaDB     │
+│ Consultas    │   │ Búsqueda emb. │   │ xAI Grok-3   │
+└──────────────┘   └───────────────┘   └──────────────┘
 
 - **Datos**: 554 incidencias (Excel procesado).
 - **Embeddings**: Paraphrase-multilingual (384 dims).

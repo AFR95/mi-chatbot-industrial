@@ -156,7 +156,7 @@ cd mi-chatbot-industrial
 pip install -r requirements.txt
 export XAI_API_KEY="tu-key"
 streamlit run app.py
-
-## 📝 Conclusión
+```
+📝 Conclusión
 Proyecto aplicado que resuelve un problema real en mantenimiento industrial con IA. Listo para escalado.
-Contacto: afr95@email.com
+Contacto: afernandez.rubio@outlook.es

@@ -532,7 +532,7 @@ def actualizar_base_datos(uploaded_file):
         return None, None, None
 
 # === INTERFAZ STREAMLIT ===
-st.title("🤖 Chatbot de Incidencias Industriales")
+st.title("🤖 Chatbot de Incidencias Industriales 🚀")
 st.markdown("---")
 
 # Sidebar para configuración y actualizaciones
@@ -630,7 +630,7 @@ else:
 st.markdown("---")
 
 # Input de consulta
-st.header("💬 Consulta de Incidencias")
+st.header("💬 Consulta de Incidencias 🎯")
 query = st.text_input(
     "Ingrese su consulta (ej: 'scada cogeneracion no funciona'):",
     placeholder="Escribe aquí tu problema..."

@@ -128,3 +128,31 @@ Ver `requirements.txt`
 │ Streamlit UI │◄──►│ Parsing fuzzy │◄──►│ ChromaDB     │
 │ Consultas    │   │ Búsqueda emb. │   │ xAI Grok-3   │
 └──────────────┘   └───────────────┘   └──────────────┘
+
+
+
+- **Datos**: 554 incidencias (Excel procesado).
+- **Embeddings**: Paraphrase-multilingual (384 dims).
+- **API**: xAI Grok-3 para respuestas naturales.
+
+## 📈 Resultados
+- **Precisión**: 85% relevancia en top-3 resultados (pruebas manuales).
+- **Tiempo**: Carga inicial ~30s, respuestas <3s.
+- **Métricas**: 554 incidencias, 9 plantas, 88 equipos.
+- **Fallback**: Funciona sin xAI.
+
+## 📚 Código y Recursos
+- **Repo GitHub**: https://github.com/AFR95/mi-chatbot-industrial
+  - `app.py`: Código principal
+  - `requirements.txt`: Dependencias
+  - `HISTORICO_INCIDENCIAS.xlsx`: Datos
+- **Notebook**: [proyecto_final.ipynb](https://github.com/AFR95/mi-chatbot-industrial/blob/main/proyecto_final.ipynb) (explicación código)
+- **PDF**: [Informe PDF](https://github.com/AFR95/mi-chatbot-industrial/blob/main/informe_proyecto.pdf) (resumen 5 páginas)
+
+## 🔒 Instalación Local
+```bash
+git clone https://github.com/AFR95/mi-chatbot-industrial.git
+cd mi-chatbot-industrial
+pip install -r requirements.txt
+export XAI_API_KEY="tu-key"
+streamlit run app.py

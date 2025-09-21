@@ -69,3 +69,21 @@ streamlit run app.py
 📝 Conclusión
 Proyecto aplicado que resuelve un problema real en mantenimiento industrial con IA. Listo para escalado.
 Contacto: afernandez.rubio@outlook.es
+
+
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   USUARIO       │    │   FRONTEND       │    │   BACKEND       │
+│ Consulta:       │◄──►│ Streamlit UI     │◄──►│ Flask/Python    │
+│ "scada no       │    │ • Parsing fuzzy  │    │ • ChromaDB      │
+│ comunica"       │    │ • Métricas RT    │    │ • Embeddings    │
+└─────────────────┘    │ • Tabla coloreada│    │ • xAI API       │
+                       └──────────────────┘    └─────────────────┘
+                                 │
+                                 ▼
+                       ┌──────────────────┐
+                       │   DATOS          │
+                       │ • 554 incidencias│
+                       │ • 9 plantas      │
+                       │ • 88 equipos     │
+                       │ • Excel procesado│
+                       └──────────────────┘

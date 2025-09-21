@@ -303,7 +303,7 @@ def normalizar_datos(df):
     return df
 
 # === Indexar en Chroma ===
-def indexar_chroma(df, model_name='paraphrase-multilingual-MiniLM-L12-v2', db_path='./chroma_db'):
+def indexar_chroma(df, model_name='all-MiniLM-L6-v2', db_path='./chroma_db'):#model_name='paraphrase-multilingual-MiniLM-L12-v2'
     model = SentenceTransformer(model_name)
     df_unique = df.drop_duplicates(subset=['error', 'solución', 'planta', 'equipo'])
     logging.info(f"Datos deduplicados: {len(df_unique)} filas")

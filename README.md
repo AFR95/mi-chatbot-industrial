@@ -43,7 +43,24 @@
 - **Datos**: 554 incidencias (Excel procesado).
 - **Embeddings**: Paraphrase-multilingual (384 dims).
 - **API**: xAI Grok-3 para respuestas naturales.
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   USUARIO       │    │   FRONTEND       │    │   BACKEND       │
+│ Consulta:       │◄──►│ Streamlit UI     │◄──►│ Flask/Python    │
+│ "scada no       │    │ • Parsing fuzzy  │    │ • ChromaDB      │
+│ comunica"       │    │ • Métricas RT    │    │ • Embeddings    │
+└─────────────────┘    │ • Tabla coloreada│    │ • xAI API       │
+                       └──────────────────┘    └─────────────────┘
+                                 │
+                                 ▼
+                       ┌──────────────────┐
+                       │   DATOS          │
+                       │ • 554 incidencias│
+                       │ • 9 plantas      │
+                       │ • 88 equipos     │
+                       │ • Excel procesado│
+                       └──────────────────┘
 
+  
 ## 📈 Resultados
 - **Precisión**: 85% relevancia en top-3 resultados (pruebas manuales).
 - **Tiempo**: Carga inicial ~30s, respuestas <3s.
@@ -70,20 +87,3 @@ streamlit run app.py
 Proyecto aplicado que resuelve un problema real en mantenimiento industrial con IA. Listo para escalado.
 Contacto: afernandez.rubio@outlook.es
 
-
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   USUARIO       │    │   FRONTEND       │    │   BACKEND       │
-│ Consulta:       │◄──►│ Streamlit UI     │◄──►│ Flask/Python    │
-│ "scada no       │    │ • Parsing fuzzy  │    │ • ChromaDB      │
-│ comunica"       │    │ • Métricas RT    │    │ • Embeddings    │
-└─────────────────┘    │ • Tabla coloreada│    │ • xAI API       │
-                       └──────────────────┘    └─────────────────┘
-                                 │
-                                 ▼
-                       ┌──────────────────┐
-                       │   DATOS          │
-                       │ • 554 incidencias│
-                       │ • 9 plantas      │
-                       │ • 88 equipos     │
-                       │ • Excel procesado│
-                       └──────────────────┘

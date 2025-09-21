@@ -1,4 +1,4 @@
-import streamlit as st
+ƒimport streamlit as st
 import pandas as pd
 try:
     import pysqlite3
@@ -595,29 +595,75 @@ with st.sidebar:
 
 # === ESTADO DE LA APLICACIÓN ===
 if 'collection' not in st.session_state:
-    st.info("🔄 **Primera carga**: Inicializando base de datos...")
-    with st.spinner("Cargando e indexando datos iniciales..."):
+    st.info("🚀 **Cargando sistema**...")
+    with st.spinner("Inicializando..."):
         try:
-            archivo_entrada = "HISTORICO_INCIDENCIAS.xlsx"
-            if not os.path.exists(archivo_entrada):
-                st.error(f"❌ Archivo `{archivo_entrada}` no encontrado.")
-                st.info("**Solución**: Sube el archivo Excel al repositorio GitHub.")
-                st.stop()
-            
-            df = cargar_datos(archivo_entrada)
-            df = limpiar_datos(df)
-            df = normalizar_datos(df)
-            st.session_state.collection = indexar_chroma(df)
-            st.session_state.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-            st.session_state.df_actual = df
-            st.session_state.ultima_actualizacion = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            st.success("✅ Datos iniciales cargados e indexados.")
-            
+            # PRIORIDAD 1: INTENTAR PRE-GENERADOS (RÁPIDO)
+            if os.path.exists('datos_procesados.pkl') and os.path.exists('embeddings.npy'):
+                st.info("⚡ Cargando pre-generados...")
+                
+                # Cargar datos procesados
+                import pickle
+                import numpy as np
+                df = pd.read_pickle('datos_procesados.pkl')
+                embeddings = np.load('embeddings.npy')
+                
+                st.session_state.df_actual = df
+                st.session_state.ultima_actualizacion = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Cargar modelo
+                from sentence_transformers import SentenceTransformer
+                model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+                st.session_state.model = model
+                
+                # Reconstruir ChromaDB (rápido, en memoria)
+                import chromadb
+                client = chromadb.Client()  # En memoria para velocidad
+                collection = client.create_collection('incidencias')
+                
+                # Agregar documentos únicos
+                df_unique = df.drop_duplicates(subset=['error']).reset_index(drop=True)
+                ids = [f'doc_{i}' for i in range(len(df_unique))]
+                metadatos = [{
+                    'planta': row['planta'],
+                    'equipo': row['equipo'],
+                    'solución': row['solución'],
+                    'requiere_ingenieria': str(row['¿es necesario?'])
+                } for _, row in df_unique.iterrows()]
+                
+                # Usar embeddings pre-generados
+                collection.add(
+                    embeddings=embeddings[:len(df_unique)].tolist(),
+                    documents=df_unique['error'].tolist(),
+                    metadatas=metadatos,
+                    ids=ids
+                )
+                
+                st.session_state.collection = collection
+                st.success(f"⚡ Pre-generados cargados! ({len(df)} incidencias, {len(ids)} únicos)")
+                
+            else:
+                # FALLBACK: INDEXACIÓN ORIGINAL (lenta)
+                st.info("🔄 Indexación inicial...")
+                archivo_entrada = "HISTORICO_INCIDENCIAS.xlsx"
+                if not os.path.exists(archivo_entrada):
+                    st.error(f"❌ Archivo `{archivo_entrada}` no encontrado.")
+                    st.stop()
+                    
+                df = cargar_datos(archivo_entrada)
+                df = limpiar_datos(df)
+                df = normalizar_datos(df)
+                st.session_state.collection = indexar_chroma(df)
+                st.session_state.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+                st.session_state.df_actual = df
+                st.session_state.ultima_actualizacion = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.success("✅ Indexación completada.")
+                
         except Exception as e:
-            st.error(f"❌ Error al cargar datos iniciales: {e}")
+            st.error(f"❌ Error carga: {e}")
             st.stop()
 else:
-    # Mostrar estado actual
+    # Mostrar métricas
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("📊 Incidencias", len(st.session_state.df_actual))
@@ -627,7 +673,6 @@ else:
         st.metric("⚙️ Equipos", len(st.session_state.df_actual['equipo'].unique()))
     
     st.caption(f"🕒 Última actualización: {st.session_state.ultima_actualizacion}")
-
 st.markdown("---")
 
 # Input de consulta
